@@ -1,6 +1,9 @@
 import puppeteer from 'puppeteer'
-import { env, selectors } from './env'
+import { env } from './env'
+import { selectors } from './selectors'
+
 //Navigation
+
 async function navigation() {
 	//Init browser
 	const browser = await puppeteer.launch({ headless: false })
@@ -16,10 +19,41 @@ async function navigation() {
 
 	//Clicl submit button and wait for page to load
 	await page.click(selectors.submit)
-	await page.waitForNavigation({ waitUntil: 'networkidle0' })
+	await page.waitForNavigation({ waitUntil: 'load' })
 
 	//Redirect to DM's
 	await page.goto(env.userurl)
+	await page.waitForSelector(selectors.messages)
+
+	return page
 }
 
-navigation()
+//Count total gifs in messages
+async function countGifs(page: puppeteer.Page){
+	//Loop through message list and query to the a tag with link
+	const messages = await page.$$eval(selectors.messages, (elements) => {
+		return elements.map((el) => {
+			return el.querySelector('div[class^="container-"]')?.querySelector('div a')?.getAttribute('href')
+		})
+	})
+
+	//Log Total messages
+	console.log('%cLENGHT = ' + messages.length, 'background: #222; color: #bada55')
+
+	let gifcount = 0;
+
+	//Count gif's
+	for(let i = 0; i < messages.length; i++)
+		if(messages[i] != undefined)
+			gifcount++;
+
+	//return it
+	return gifcount
+} 
+
+async function main() {
+	const page = await navigation()
+	console.log("total gifs: " + await countGifs(page))
+}
+
+main()
