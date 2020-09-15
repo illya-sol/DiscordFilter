@@ -6,7 +6,7 @@ import { selectors } from './selectors'
 
 async function navigation() {
 	//Init browser
-	const browser = await puppeteer.launch({ headless: true })
+	const browser = await puppeteer.launch({ headless: false })
 	const page = await browser.newPage()
 
 	//Goto url specified in env file
@@ -37,7 +37,7 @@ async function latestMessages(page: puppeteer.Page) {
 		})
 	})
 	//Log Total messages
-	console.log('%c[INFO]Total Messages = ' + messages.length, 'background: #222; color: #bada55')
+	// console.log('%c[INFO]Total Messages = ' + messages.length, 'background: #222; color: #bada55')
 	return messages
 }
 
@@ -63,18 +63,20 @@ function interpretUsers(users: (string | undefined)[]) {
 async function responseLoop(users : (string | undefined)[], messages : string[], callback : Function, page: puppeteer.Page){
 	//Gif Counter
 	let gifs = 0
-	for(let i = users.length - 1; i > env.fillGifs; i--){
+	for(let i = users.length - 1; i > users.length - env.fillGifs - 1; i--){
 		//Count as gif if target Nickname sent a gif
+		console.log("i: " + i + "	" + users[i] + " 	" + messages[i])
 		if(users[i] == env.nickname && messages[i])
 			gifs++
 		//Do action if gifCount surpasses max amount
-		if(gifs > env.maxGifs){
+		if(gifs >= env.maxGifs){
 			await callback(page)
 			break;
 		}
 	}
 }
 
+//Reply with gifs to fill the chat
 async function Reply(page: puppeteer.Page){
 	//Reply code
 	for(let i = 0; i < env.fillGifs; i++){
@@ -87,12 +89,17 @@ async function Reply(page: puppeteer.Page){
 async function main() {
 	//Get Dms page
 	const page = await navigation()
-	//Get all Latest messages
-	const messages = await latestMessages(page)
-	//Get all user to message relations
-	const users = interpretUsers( await userToMessage(page) )
+	
+	//Event loop
+	while(true){
+		//Get all Latest messages
+		const messages = await latestMessages(page)
+		//Get all user to message relations
+		const users = interpretUsers( await userToMessage(page) )
 
-	responseLoop(users,messages, Reply, page)
+		await page.waitFor(3000)
+		await responseLoop(users,messages, Reply, page)
+	}
 }
 
 main()
