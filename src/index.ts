@@ -28,32 +28,64 @@ async function navigation() {
 	return page
 }
 
-//Count total gifs in messages
-async function countGifs(page: puppeteer.Page){
+//Get Latest messages
+async function latestMessages(page: puppeteer.Page) {
 	//Loop through message list and query to the a tag with link
 	const messages = await page.$$eval(selectors.messages, (elements) => {
 		return elements.map((el) => {
-			return el.querySelector('div[class^="container-"]')?.querySelector('div a')?.getAttribute('href')
+			return el.querySelector('div[class^="container-"] div a')?.getAttribute('href')!
 		})
 	})
-
 	//Log Total messages
-	console.log('%cLENGHT = ' + messages.length, 'background: #222; color: #bada55')
+	console.log('%c[INFO]Total Messages = ' + messages.length, 'background: #222; color: #bada55')
+	return messages
+}
 
-	let gifcount = 0;
 
-	//Count gif's
-	for(let i = 0; i < messages.length; i++)
-		if(messages[i] != undefined)
-			gifcount++;
+//Get users corresponding to messages
+async function userToMessage(page: puppeteer.Page) {
+	//Loop through message list and query the users
+	const users = await page.$$eval(selectors.messages, (elements) => {
+		return elements.map((el) => {
+			return el.querySelector('span[class^="username-"]')?.innerHTML
+	})
+})
+	return users
+}
 
-	//return it
-	return gifcount
-} 
+function interpretUsers(users: (string | undefined)[]) {
+	for(let i = 0; i < users.length; i++)
+		if(users[i] == undefined)	
+			users[i] = users[i - 1]
+	return users
+}
 
+async function responseLoop(users : (string | undefined)[], messages : string[], callback : Function, page: puppeteer.Page){
+	//Gif Counter
+	let gifs = 0
+	for(let i = users.length - 1; i > 0; i--){
+		if(users[i] == env.nickname && messages[i])
+			gifs++
+		//Do action if gifCount surpasses max amount
+		if(gifs > env.maxGifs)
+			await callback(page)
+	}
+}
+
+async function Reply(page: puppeteer.Page){
+	await page.$$eval()
+}
+
+//Main
 async function main() {
+	//Get Dms page
 	const page = await navigation()
-	console.log("total gifs: " + await countGifs(page))
+	//Get all Latest messages
+	const messages = await latestMessages(page)
+	//Get all user to message relations
+	const users = interpretUsers( await userToMessage(page) )
+
+	responseLoop(users,messages, Reply, page)
 }
 
 main()

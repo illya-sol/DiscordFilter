@@ -3,4 +3,5 @@ export const selectors = {
 	password: 'input[type="password"]',
 	submit: 'button[type="submit"]',
 	messages: 'div[id^="chat-messages-"]'
+	//gif: 'div[class^="container-"] div a'
 }
