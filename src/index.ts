@@ -6,7 +6,7 @@ import { selectors } from './selectors'
 
 async function navigation() {
 	//Init browser
-	const browser = await puppeteer.launch({ headless: false })
+	const browser = await puppeteer.launch({ headless: true })
 	const page = await browser.newPage()
 
 	//Goto url specified in env file
@@ -63,17 +63,24 @@ function interpretUsers(users: (string | undefined)[]) {
 async function responseLoop(users : (string | undefined)[], messages : string[], callback : Function, page: puppeteer.Page){
 	//Gif Counter
 	let gifs = 0
-	for(let i = users.length - 1; i > 0; i--){
+	for(let i = users.length - 1; i > env.fillGifs; i--){
+		//Count as gif if target Nickname sent a gif
 		if(users[i] == env.nickname && messages[i])
 			gifs++
 		//Do action if gifCount surpasses max amount
-		if(gifs > env.maxGifs)
+		if(gifs > env.maxGifs){
 			await callback(page)
+			break;
+		}
 	}
 }
 
 async function Reply(page: puppeteer.Page){
-	await page.$$eval()
+	//Reply code
+	for(let i = 0; i < env.fillGifs; i++){
+		await page.type(selectors.form, env.response)
+		await page.keyboard.press('Enter')
+	}
 }
 
 //Main
