@@ -12,5 +12,5 @@ cd DiscordFilter
 yarn install
 ```
 
-2. Write your code in `src/index.ts`
-3. `yarn start`
+3. Write your code in `src/index.ts`
+4. `yarn start`
